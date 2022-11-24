@@ -1,0 +1,246 @@
+#%RAML 1.0
+title: Order Tracking API
+
+traits:
+  client-id-required:
+    headers:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+    responses:
+      401:
+        description: Unauthorized, The client_id or client_secret are not valid or the client does not have access.
+      429:
+        description: The Client Used all of its request quota for currrent period.
+      202:
+        description: Non Authorative - Meta Data Doesn't Match
+
+securitySchemes:
+  basic:
+    description: |
+      This is for Basic Authentication
+    type: Basic Authentication
+
+types:
+  Customer: !include /exchange_modules/d0a5a5da-e82f-4b62-8b7e-6bc003ee47ce/customer/1.0.4/customer.raml
+  Order: !include  /exchange_modules/d0a5a5da-e82f-4b62-8b7e-6bc003ee47ce/order/1.0.2/order.raml
+  Address: !include /exchange_modules/d0a5a5da-e82f-4b62-8b7e-6bc003ee47ce/shipment/1.0.3/shipment.raml
+
+/customer:
+  description: Customer Info Methods
+  get:
+    description: Customer Info Methods for Administrator
+    securedBy:
+      - basic
+    is:
+      - client-id-required  
+  post:
+    securedBy:
+      - basic
+    is:
+      - client-id-required
+    body:
+      application/json:
+        type: Customer
+        example: !include examples/Requests/CustomerNoID.raml
+    responses:
+      201:
+        body:
+          application/json:
+            example : Customer Added(But Not) really
+  /{id}:
+    # displayName: Get| Update | Delete Customer
+    uriParameters:
+      id:
+        displayName: Customer ID
+        description: Customer Unique Identification Number
+        type: integer
+        example: 2
+    get:
+      securedBy:
+      - basic
+      is:
+        - client-id-required
+      description: GET Current Customer Info
+      responses:
+        200:
+          body:
+            application/json:
+              type: Customer
+              example: !include examples/Responses/CustomerExample.raml
+
+    put:
+      securedBy:
+      - basic
+      is:
+        - client-id-required
+      description: Update Customer Info 
+      body:
+        application/json:
+          type: Customer
+          example: !include examples/Requests/CustomerNoID.raml
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                message : "Customer Updated"
+    delete:
+      securedBy:
+      - basic
+      is:
+        - client-id-required
+      description: Delete Customer
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                message : "Customer Deleted"
+
+/orders:
+  description: Order Info Methods
+  get:
+    description: Order Info Method for Administrator
+    securedBy:
+      - basic
+    is:
+      - client-id-required  
+  post:
+    securedBy:
+      - basic
+    is:
+      - client-id-required
+    body:
+      application/json:
+        type: Order
+        example: !include examples/Requests/OrderNoID.raml
+    responses:
+      201:
+        body:
+          application/json:
+            example : Customer Added(But Not) really
+  /{id}:
+    # displayName: Get| Update | Delete Customer
+    uriParameters:
+      id:
+        displayName: Order ID
+        description: Order Unique Identification Number
+        type: integer
+        example: 2
+    get:
+      securedBy:
+      - basic
+      is:
+        - client-id-required
+      description: GET Current Customer Order Info
+      responses:
+        200:
+          body:
+            application/json:
+              type: Order[]
+              example: !include examples/Responses/OrdersExample.raml
+    put:
+      securedBy:
+      - basic
+      is:
+        - client-id-required
+      description: Update Order Info 
+      body:
+        application/json:
+          type: Order
+          example: !include examples/Requests/OrderNoID.raml
+      responses:
+        200:
+          body:
+            application/json:
+              examples:
+                message : "Order Updated"
+    delete:
+      securedBy:
+      - basic
+      is:
+        - client-id-required
+      description: Delete Order of Current Customer
+      responses:
+        200:
+          body:
+            application/json:
+              examples:
+                message : "Order Deleted"
+    
+/address:
+      description: Customer Info Methods
+      post:
+        securedBy:
+        - basic
+        is:
+          - client-id-required
+        body:
+          application/json:
+            type: Address
+            example: !include examples/Requests/ShippingNoID.raml
+        responses:
+          201:
+            body:
+              application/json:
+                example : Address Added(But Not) really
+      
+      /{id}:
+        # displayName: Get| Update | Delete Customer
+        uriParameters:
+          id:
+            displayName: Address ID
+            description: Identify Unique Address No
+            type: integer
+            example: 2
+        get:
+          securedBy:
+          - basic
+          is:
+            - client-id-required
+          description: GET Current Customer Info
+          queryParameters:
+            customer_id: 
+              required: false
+          responses:
+            200:
+              body:
+                application/json:
+                  type: Address
+                  example: !include examples/Responses/AddressExample.raml
+        put:
+          securedBy:
+            - basic
+          is:
+            - client-id-required
+          description: Update Customer Address Info 
+          queryParameters:
+            customer_id: 
+              required: true
+          body:
+            application/json:
+              type: Address
+              example: !include examples/Requests/ShippingNoID.raml
+          responses:
+            200:
+              body:
+                application/json:
+                  example:
+                    message : "Address Updated"
+        delete:
+          securedBy:
+            - basic
+          is:
+            - client-id-required
+          description: Delete Customer
+          queryParameters:
+            customer_id: 
+              required: false
+          responses:
+            200:
+              body:
+                application/json:
+                  example:
+                    message : "Address Deleted"
