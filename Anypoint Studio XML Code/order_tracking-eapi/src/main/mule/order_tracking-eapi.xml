@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="getSummaryofCustomer" doc:id="93c30954-5c5c-4c4a-a161-19ca3dac83ae" >
+		<vm:listener queueName="customerSummary" doc:name="Listener" doc:id="816ff76d-7f3d-4ef0-9d82-d8ef51ff1e14" config-ref="VM_Config_Exp" />
+		<logger level="INFO" doc:name="Logger" doc:id="24718304-be65-4e4d-8b97-12ca93baeae7" message="In Experience"/>
+		<logger level="INFO" doc:name="Logger" doc:id="eb440845-cf9e-45ca-9d01-248b6521e210" message="#[payload]" />
+		<set-variable value="#[payload]" doc:name="customerID" doc:id="a2d473a6-622a-4866-bce3-5846d346f0f7" variableName="customerID" />
+		<http:request method="GET" doc:name="Request" doc:id="dc7e41c0-799f-4f7d-87a5-b651531ba8d0" config-ref="HTTP_ReqExp" path="/customers/{customerId}/summary" sendCorrelationId="NEVER" >
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"customerId" : vars.customerID
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="postOrderAddress" doc:id="a279d953-b2f2-40f2-880b-667488c72118" >
+		<vm:listener queueName="createOrderAddress" doc:name="Listener" doc:id="2a1f79a7-5dad-433a-a0fd-7054b3ac74c1" config-ref="VM_Config_Exp" />
+		<logger level="INFO" doc:name="Logger" doc:id="5d792de4-94ac-42fb-b89a-d394bf0d9a50" message="In Experience" />
+		<logger level="INFO" doc:name="Logger1" doc:id="af357554-064c-4a98-8333-f7dd26dde1e6" message="#[payload]" />
+		<set-variable value="#[payload.CustomerID]" doc:name="CustomerID" doc:id="7f1e99aa-04ce-4e09-acfc-2750ae515f50" variableName="CustomerID" />
+		<http:request method="POST" doc:name="Request" doc:id="f328b16a-b92d-4a97-9bce-45e1069adecf" config-ref="HTTP_ReqExp" path="/customers/{customerId}/orders" sendCorrelationId="NEVER" >
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"customerId" : vars.CustomerID
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="getAllOrderSetExperience" doc:id="faf0548d-7fb7-482a-ac2b-14ea2b60169a" >
+		<http:request method="GET" doc:name="Request" doc:id="03478f40-6d08-4c73-a767-171ab9a19486" config-ref="HTTP_ReqExp" path="/admin/summaryorders" sendCorrelationId="NEVER" />
+		<ee:transform doc:name="Transform Message" doc:id="1e0ef2da-08a9-4175-b771-48cc4b952ed0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getAllCustomerSetExperience" doc:id="30555cb0-c6a2-454b-ac22-0b05872390c6" >
+		<http:request method="GET" doc:name="Request" doc:id="48e78820-2a87-4afd-8867-d78814f66d16" config-ref="HTTP_ReqExp" path="/admin/summaryusers" sendCorrelationId="NEVER" />
+		<ee:transform doc:name="Transform Message" doc:id="28c717a9-5447-40d8-81ca-1e3492fa7159" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getSummaryofallExperience" doc:id="37785a56-41ef-43d6-8423-2dd923e63c86" >
+		<http:request method="GET" doc:name="Request" doc:id="c105521f-653b-416c-a30d-72b8859fdc7b" config-ref="HTTP_ReqExp" path="/admin/summary" sendCorrelationId="NEVER" />
+		<ee:transform doc:name="Transform Message" doc:id="c4c43deb-031b-4f39-a440-4b6b31ff5e69" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

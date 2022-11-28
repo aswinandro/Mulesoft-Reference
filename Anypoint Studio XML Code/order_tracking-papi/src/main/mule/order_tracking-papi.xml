@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<flow name="getCustomerDetails" doc:id="f04c4749-524a-4a59-a7de-bc09bc820813" >
+		<vm:listener doc:name="Listener" doc:id="c5ea9af4-0cbe-4a3a-a6c8-876a962a7671" config-ref="VM_ConfigProcess" queueName="customerGetProcess"/>
+		<logger level="INFO" doc:name="Logger" doc:id="48a20694-65dd-4120-9bed-720ab314f879" message="#[payload]" />
+		<set-variable value="#[payload]" doc:name="customerID" doc:id="513a73e6-41f0-4667-949a-3eafe56c1578" variableName="customerID"/>
+		<http:request method="GET" doc:name="Request" doc:id="6ac3edf6-89d0-423e-a212-2f07da55649a" config-ref="HTTP_Request_configuration" path="/customer/{id}" sendCorrelationId="NEVER">
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"id" : vars.customerID
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="getOrderDetailsofCustomer" doc:id="75514414-e0c8-4909-a9b7-7caff800419e" >
+		<vm:listener queueName="getOrdersofCustomer" doc:name="Listener" doc:id="f3a83467-2ca8-43c4-b584-bc650eeda234" config-ref="VM_ConfigProcess" />
+		<logger level="INFO" doc:name="Logger" doc:id="cb4d7610-ef95-444b-b962-585a7cce5c1d" message="#[payload]" />
+		<set-variable value="#[payload]" doc:name="customerID" doc:id="d4fcdbdd-553a-4e43-9ef7-5c8b26984202" variableName="customerID" />
+		<http:request method="GET" doc:name="Request" doc:id="6d93be9a-a78c-44e3-a649-1bd72ba1ea6d" config-ref="HTTP_Request_configuration" path="/orders/{id}" sendCorrelationId="NEVER" >
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"id" : vars.customerID
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="getCustomerAllDetails" doc:id="8be37ea0-b5e3-4875-9cfd-4abb8afb82e5" >
+		<vm:listener queueName="customerSummary" doc:name="Listener" doc:id="e6ac5cac-0040-4fe6-8e11-a62263b28203" config-ref="VM_ConfigProcess" />
+		<logger level="INFO" doc:name="Logger" doc:id="53afa255-8cde-4960-86c3-513b0f6786dc" message="#[payload]" />
+		<set-variable value="#[payload]" doc:name="customerID" doc:id="447ee5fc-d419-407f-892b-f6b952f0dc8a" variableName="customerID" />
+		<logger level="INFO" doc:name="Logger" doc:id="470aa5b1-a6b1-457c-a1dc-0f012761845f" message="Im inside Customererew"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="eb06589e-bf99-4d7f-9ba8-01b6e4188d52" >
+			<route >
+				<http:request method="GET" doc:name="Request" doc:id="99849893-0ddd-4e27-96d7-1f502e8dbfed" config-ref="HTTP_Request_configuration" path="/customer/{id}" sendCorrelationId="NEVER">
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"id" : vars.customerID
+}]]]></http:uri-params>
+		</http:request>
+			</route>
+			<route >
+				<http:request method="GET" doc:name="Request" doc:id="80a97826-50d3-439d-ae79-23de382ef9e9" config-ref="HTTP_Request_configuration" path="/orders/{id}" sendCorrelationId="NEVER">
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"id" : vars.customerID
+}]]]></http:uri-params>
+		</http:request>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="39606438-0432-4f3b-9932-587d3fa6cb79" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var Totalee = payload[1].payload.TotalPrice
+var TotUnits = payload."1".payload.Quantity
+---
+{
+	'Customer_Details':
+		flatten(payload[0].payload )
+		
+	,
+	'No of Orders' :
+	  sizeOf(payload[1].payload)
+	,
+	'Total Amount Spent' :
+	  "Rs. " ++ sum(Totalee)
+	,
+	'Total No of Units Ordered' :
+		sum(TotUnits)
+	,
+	'Customer_Orders':
+	    flatten(payload[1].payload )
+		
+}
+
+
+
+
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="postOrderFlow" doc:id="23113026-3d47-45e9-8036-9460987188ae" >
+		<vm:listener queueName="postOrderpapi" doc:name="postOrder" doc:id="9901bd5b-e195-432a-9a9f-02b41f37968f" config-ref="VM_ConfigProcess" />
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	'InvoiceID' :payload.InvoiceID,&#10;	'InvoiceName':payload.InvoiceName,&#10;	'ItemID'    : payload.ItemID, &#10;	'ItemName' : payload.ItemName,&#10;	'Quantity' : payload.Quantity,&#10;	'BasePrice' : payload.BasePrice,&#10;	'PromoCode' : payload.PromoCode&#10;}]" doc:name="OrderDetails" doc:id="751470fc-7129-426f-97d2-89b8c0fa2eb8" variableName="OrderDetails" />
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	'BillingAddress1' :payload.BillingAddress1,&#10;	'BillingAddress2':payload.BillingAddress2,&#10;	'ShippingAddress'    : payload.ShippingAddress, &#10;	'City' : payload.City,&#10;	'State' : payload.State,&#10;	'Country' : payload.Country,&#10;	'PostalCode' : payload.PostalCode,&#10;	'MobileNo' : payload.MobileNo&#10;}]" doc:name="AddressDetails" doc:id="072aef27-7a6d-4aab-b344-e326bf5b23aa" variableName="AddressDetails" />
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload.CustomerID]" doc:name="CustomerID" doc:id="29877336-a6ab-4bf0-a502-fc619f09aae6" variableName="CustomerID" />
+		<try doc:name="Try" doc:id="ba6b2b2c-e8cf-4071-b674-5d8aef6e5f38" >
+			<http:request method="POST" doc:name="Request" doc:id="0f71f78a-454f-43e2-abd4-c3fe8bd72cb9" config-ref="HTTP_Request_configuration" path="/orders" sendCorrelationId="NEVER">
+			<http:body><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	'CustomerID': vars.CustomerID as Number,
+	(vars.OrderDetails)
+}]]]></http:body>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"" : ""
+}]]]></http:uri-params>
+		</http:request>
+			<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1bea927f-26e7-4eaf-8535-e7c770d76d59" >
+					<ee:transform doc:name="Transform Message" doc:id="17d9d178-b154-4057-89cb-f5fb6afe81dd">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	'message' : "Order Not Created"
+}
+]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<set-variable value="#[{'Order Status' : &quot;Order Created Successfully&quot;}]" doc:name="OrderStatus" doc:id="ee71f881-f35c-4713-84a5-94519b451cf0" variableName="OrderStatus"/>
+		<try doc:name="Try" doc:id="695f4ecb-9f15-4444-aa6a-0c3b6053f116" >
+			<logger level="INFO" doc:name="Logger" doc:id="38a2770c-ee3d-44da-86da-d6e9b5c2e958" message="#[vars.CustomerID]" />
+			<http:request method="GET" doc:name="Request" doc:id="18f386a7-ce19-4832-98ba-e38364254073" config-ref="HTTP_Request_configuration" path="/address/{customerID}" sendCorrelationId="NEVER" >
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"customerID" : vars.CustomerID
+}]]]></http:uri-params>
+			</http:request>
+			<choice doc:name="Choice" doc:id="66fa96bc-c043-43d4-90d0-9dcf0bb01af7" >
+				<when expression="#[isEmpty(payload)]">
+					<http:request method="POST" doc:name="Request" doc:id="060f331a-5d03-41b1-93c9-3f177f849a9b" config-ref="HTTP_Request_configuration" path="/address">
+						<http:body ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	'CustomerID': vars.CustomerID as Number,
+	(vars.AddressDetails)
+}]]]></http:body>
+					</http:request>
+				</when>
+				<otherwise >
+					<logger level="INFO" doc:name="Logger" doc:id="2621f6d7-c04c-4ee5-9d2a-5d3ea50d89b1" message="Logged Address"/>
+				</otherwise>
+			</choice>
+			<set-variable value="#[{'Shipment Status' : &quot;Shipment Updated Successfully&quot;}]" doc:name="ShipmentStatus" doc:id="a71fcfe8-999b-46db-bb6c-cbb4da2e0c35" variableName="ShipmentStatus" />
+			<ee:transform doc:name="Transform Message" doc:id="5573c853-17c5-4575-b510-53473e5b020d" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+vars.OrderStatus ++ vars.ShipmentStatus]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="333d0075-a760-4e54-b295-7b98ea908ef8" />
+			</error-handler>
+		</try>
+	</flow>
+	<flow name="checkorCreateAddressfromOrder" doc:id="dbaeaa68-fda2-47fe-82bf-6aa1d404d672" >
+		<logger level="INFO" doc:name="Logger" doc:id="a462594c-e429-4f47-883e-b0db250fad91" message="#[vars.CustomerID]" />
+		<logger level="INFO" doc:name="Logger1" doc:id="7541c96b-dacf-4ea4-b7b1-b8f29e3b0432" message="In Flowedsffsfdfsf" />
+		<http:request method="GET" doc:name="checkorCreateAddressfromOrder" doc:id="46e63775-de7f-4d86-83cd-def22e3fbb50" config-ref="HTTP_Request_configuration" path="/address/{id}">
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"id" : vars.CustomerID
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="getAddressofCustomer" doc:id="0c179265-19dc-4574-a7db-e678620b2862" >
+		<vm:listener queueName="getAddressofCustomer" doc:name="Listener" doc:id="39c6382e-485b-45a8-b582-a74fd8ee0683" config-ref="VM_ConfigProcess" />
+		<logger level="INFO" doc:name="Logger" doc:id="49062a0d-d323-41a3-ad7d-77696f37e141" message="#[payload]" />
+		<set-variable value="#[payload]" doc:name="customerID" doc:id="7457bf20-63b7-40cf-8109-b5b06a929458" variableName="customerID" />
+		<http:request method="GET" doc:name="Request" doc:id="476febbb-b03c-46ae-993f-7c173b9d1f74" config-ref="HTTP_Request_configuration" path="/address/{id}" sendCorrelationId="NEVER" >
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"id" : vars.customerID
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="postAddress" doc:id="e91f1d43-53b0-4df7-b6dc-eb7377895a63" >
+		<vm:listener queueName="postAddressofCustomer" doc:name="postAddress" doc:id="20260dbe-387e-4369-8e55-153c27904171" config-ref="VM_ConfigProcess" />
+		<logger level="INFO" doc:name="Logger" doc:id="7a4b0088-a359-4eb4-9962-e02090fa050f" message="#[payload]" />
+		<try doc:name="Try" doc:id="50581571-a743-466a-a27e-439c975b2def" >
+			<http:request method="POST" doc:name="Request" doc:id="96e948b0-e240-4074-bf4b-d4fd43c8bdb7" config-ref="HTTP_Request_configuration" path="/address" sendCorrelationId="NEVER" >
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"" : ""
+}]]]></http:uri-params>
+			</http:request>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e665feb4-5efd-4ec3-917e-48f94d52970d" />
+			</error-handler>
+		</try>
+	</flow>
+	<flow name="putUpdateCustomerpapi" doc:id="a4762e07-24f9-4cc0-8033-b4cd21e0042c" >
+		<vm:listener queueName="putCustomertoSys" doc:name="putUpdateCustomerpapi" doc:id="05762929-918a-46ec-9846-0d5d4b7c2f11" config-ref="VM_ConfigProcess" />
+		<set-variable value="#[payload.customerID]" doc:name="customerID" doc:id="42faca8e-c629-4075-a57b-dee5cc41aeb2" variableName="customerID" />
+		<http:request method="PUT" doc:name="Request" doc:id="a8411712-845b-42d9-908c-4389b594092a" config-ref="HTTP_Request_configuration" path="/customer/{id}" sendCorrelationId="NEVER" >
+			<http:body ><![CDATA[#[payload.orderInfo]]]></http:body>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"id" : vars.customerID
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="getAllCustomerSet" doc:id="e69d15bf-558e-425b-880b-42b6005f97cb" >
+		<http:request method="GET" doc:name="Request" doc:id="86dbcbb2-e5ac-4046-b39c-1e541cf21ab2" config-ref="HTTP_Request_configuration" path="/customer" sendCorrelationId="NEVER">
+				</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="01b6c80e-1876-4e3b-884e-b823ce798d1a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+var Totalee = payload.FirstName ++ payload.LastName
+var TotUnits = payload."0".payload.LastName
+---
+{
+	
+	'No of Customers' :
+	  sizeOf(payload),
+	  
+	'Customers' :
+	  payload.FirstName ++ payload.LastName
+	,
+	'Customers List' :
+	  Totalee
+	,
+	'Customer_Details':
+		flatten(payload ),
+	
+}
+
+
+
+
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getAllOrderSet" doc:id="c84d6be0-6834-4eed-a782-4329af9d99a9" >
+		<http:request method="GET" doc:name="Request" doc:id="6e0620dd-e063-4cc8-bb0d-1fd3d976098e" config-ref="HTTP_Request_configuration" path="/orders" sendCorrelationId="NEVER" />
+		<ee:transform doc:name="Transform Message" doc:id="ab8f6609-7e99-4e5f-baf9-7f755ecf8b5a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+---
+flatten(payload)
+
+
+
+
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getSummaryofSystem" doc:id="57f049a2-fadc-4779-b47f-a2a97572dcec" >
+		<vm:listener queueName="customerSummary" doc:name="Listener" doc:id="e226cd93-198b-4309-95ba-5b3f60dd6154" config-ref="VM_ConfigProcess" />
+		<logger level="INFO" doc:name="Logger" doc:id="8b2b8dfa-3083-442b-9737-29f4ac36842c" message="#[payload]" />
+		<set-variable value="#[payload]" doc:name="customerID" doc:id="7a1c8913-60cd-40c1-b97e-781c23625d00" variableName="customerID" />
+		<scatter-gather doc:name="Scatter-Gather" doc:id="1ea5a22a-f9a0-49a1-870d-7a77016f302a" >
+			<route >
+				<http:request method="GET" doc:name="Request" doc:id="b7f2aa41-1e77-46e0-847c-de2a949349d3" config-ref="HTTP_Request_configuration" path="/customer" sendCorrelationId="NEVER" />
+			</route>
+			<route >
+				<http:request method="GET" doc:name="Request" doc:id="623f1e3d-2680-4e06-a971-3b69dfa235b9" config-ref="HTTP_Request_configuration" path="/orders" sendCorrelationId="NEVER" />
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="92c182b3-6d0d-4a26-8618-1db88701c856" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+var Totalee = payload[1].payload.TotalPrice
+var TotUnits = payload."1".payload.Quantity
+---
+{
+	
+	'No of Orders' :
+	  sizeOf(payload[1].payload),
+	  
+	'No of Customers' :
+	  sizeOf(payload[0].payload)
+	,
+	'Total Amount Spent' :
+	  "Rs. " ++ sum(Totalee)
+	,
+	'Total No of Units Ordered' :
+		sum(TotUnits)
+	,
+	'Customer_Details':
+		flatten(payload[0].payload ),
+	
+	'Customer_Orders':
+	    flatten(payload[1].payload )
+		
+}
+
+
+
+
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

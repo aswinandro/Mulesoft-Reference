@@ -1,0 +1,225 @@
+#%RAML 1.0
+title: Order-track-process
+
+traits:
+  client-id-required:
+    headers:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+    responses:
+      401:
+        description: Unauthorized, The client_id or client_secret are not valid or the client does not have access.
+      429:
+        description: The Client Used all of its request quota for currrent period.
+      202:
+        description: Non Authorative - Meta Data Doesn't Match
+
+securitySchemes:
+  basic:
+    description: |
+      This is for Basic Authentication
+    type: Basic Authentication
+
+types:
+  Customer: !include /exchange_modules/d0a5a5da-e82f-4b62-8b7e-6bc003ee47ce/customer/1.0.4/customer.raml
+  Order: !include  /exchange_modules/d0a5a5da-e82f-4b62-8b7e-6bc003ee47ce/order/1.0.2/order.raml
+  Address: !include /exchange_modules/d0a5a5da-e82f-4b62-8b7e-6bc003ee47ce/shipment/1.0.3/shipment.raml
+
+/customers:
+  description: Base resource for managing customers.
+  get:
+    description: Find one or more customers by matching one of the criteria supplied. When multiple criteria are provided the precedence order is to match on customer identifier, external identifier, and finally email address.
+    is:
+    queryParameters:
+      customerId:
+        type: string
+        required: false
+        description: Lookup by customer identifier
+      externalId:
+        required: false
+        type: string
+        description: Lookup by customer user name
+      emailAddress:
+        required: false
+        type: string
+        description: Lookup by email address
+    responses:
+      200:
+        body:
+          application/json:
+            type: 
+  post:
+    body:
+      application/json:
+        type: Customer
+        example: !include examples/Requests/CustomerNoID.raml
+    responses:
+      201:
+        body:
+          application/json:
+            example : Customer Added(But Not) really
+
+  /{customerId}:
+    get:
+      is: 
+      description: Return details for an existing customer.
+      responses:
+        200:
+          body:
+            application/json:
+              type: Customer
+              example: !include examples/Responses/CustomerExample.raml
+
+
+    put:
+      is:
+      description: Process one or more customer profile updates to downstream systems.
+      body:
+        application/json:
+          type: Customer
+          example: !include examples/Requests/CustomerNoID.raml
+      responses: 
+        200:
+          headers:
+            Location:
+              description: Relative URI of a created/updated resource
+              type: string
+              example: "/customers/95830940"
+          body: 
+            application/json:
+
+    /orders:
+      get:
+        description: Get order history for a given period for the customer.
+        queryParameters:
+          beginDate:
+            type: datetime
+            required: false
+            description: Retrieve order history updated on or after this date and time
+          endDate:
+            type: datetime
+            required: false
+            description: Retrieve order history updated on or before this date and time
+        responses:
+          200:
+            body:
+              application/json:
+      post:
+        body:
+          application/json:
+            type: Customer
+            example: !include examples/Requests/OrderNoID.raml
+        responses:
+          201:
+            body:
+              application/json:
+                example : Customer Added(But Not) really
+                
+      put:
+        description: Update Order Info 
+        queryParameters:
+          orderid:
+            type: number
+            required: false
+            description: Order ID Query Param
+        body:
+          application/json:
+            type: Order
+            example: !include examples/Requests/OrderNoID.raml
+        responses:
+          200:
+            body:
+              application/json:
+      delete:
+        description: Delete Order of Current Customer
+        responses:
+          200:
+            body:
+              application/json:
+                
+    /address:
+      description: Customer Info Methods
+      get:
+          description: GET Current Customer Info
+          queryParameters:
+            customer_id: 
+              required: false
+          responses:
+            200:
+              body:
+                application/json:
+      post:
+          description:  Create or Update Customer Address Info 
+          body:
+            application/json:
+              type: Address
+              example: !include examples/Requests/ShippingNoID.raml
+          responses:
+            200:
+              body:
+                application/json:
+      put:
+          description:  Update Customer Address Info 
+          queryParameters:
+            customer_id: 
+              required: false
+          body:
+            application/json:
+              type: Address
+              example: !include examples/Requests/ShippingNoID.raml
+          responses:
+            200:
+              body:
+                application/json:
+      delete:
+          securedBy:
+          description: Delete Customer
+          queryParameters:
+            customer_id: 
+              required: false
+          responses:
+            200:
+              body:
+                application/json:
+    /summary:
+      get:
+        is: 
+        description: Return Summary of Existing Customer
+        responses:
+          200:
+            body:
+              application/json:
+
+/admin:
+    /summary:
+      get:
+        is: 
+        description: Return Summary of Whole Management System
+        responses:
+          200:
+            body:
+              application/json:
+    /summaryusers:
+      get:
+        is: 
+        description: Return Summary of Existing Customers
+        responses:
+          200:
+            body:
+              application/json:
+    
+    /summaryorders:
+      get:
+        is: 
+        description: Return Summary of Existing Orders
+        responses:
+          200:
+            body:
+              application/json:
+    
+                  
+
+                
+

@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+    <http:listener-config name="order-track-process-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8082" />
+    </http:listener-config>
+    <apikit:config name="order-track-process-config" api="order-track-process.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="order-track-process-main">
+        <http:listener config-ref="order-track-process-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="order-track-process-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="order-track-process-console">
+        <http:listener config-ref="order-track-process-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="order-track-process-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\customers\(customerId)\address:application\json:order-track-process-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="customerId">attributes.uriParams.'customerId'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <logger level="INFO" message="put:\customers\(customerId)\address:application\json:order-track-process-config" />
+    </flow>
+    <flow name="put:\customers:application\json:order-track-process-config">
+        <logger level="INFO" message="put:\customers:application\json:order-track-process-config" />
+    </flow>
+    <flow name="put:\customers\(customerId)\orders:application\json:order-track-process-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="customerId">attributes.uriParams.'customerId'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <logger level="INFO" message="put:\customers\(customerId)\orders:application\json:order-track-process-config" />
+    </flow>
+    <flow name="delete:\customers\(customerId)\address:order-track-process-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="customerId">attributes.uriParams.'customerId'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <logger level="INFO" message="delete:\customers\(customerId)\address:order-track-process-config" />
+    </flow>
+    <flow name="delete:\customers\(customerId)\orders:order-track-process-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="customerId">attributes.uriParams.'customerId'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <logger level="INFO" message="delete:\customers\(customerId)\orders:order-track-process-config" />
+    </flow>
+    <flow name="get:\customers\(customerId)\address:order-track-process-config">
+        <set-variable value="#[attributes.uriParams.'customerId']" doc:name="storeCustomerID" doc:id="3b1e9085-0e84-4b83-8a59-aa153ef614b3" variableName="storeCustomerID" />
+        <vm:publish-consume queueName="getAddressofCustomer" doc:name="Publish consume" doc:id="77aeaaf3-b263-4d98-a311-34c4a5873b56" config-ref="VM_ConfigProcess">
+            <vm:content><![CDATA[#[vars.storeCustomerID]]]></vm:content>
+        </vm:publish-consume>
+    </flow>
+    <flow name="get:\customers:order-track-process-config">
+        <logger level="INFO" message="get:\customers:order-track-process-config" />
+    </flow>
+    <flow name="get:\customers\(customerId)\orders:order-track-process-config">
+        <set-variable value="#[attributes.uriParams.'customerId']" doc:name="storeCustomerID" doc:id="0d29b1c3-30d7-4620-a010-7714ca22f432" variableName="storeCustomerID" />
+        <vm:publish-consume queueName="getOrdersofCustomer" doc:name="Publish consume" doc:id="0bea0184-9664-4532-b8a7-063df2b94329" config-ref="VM_ConfigProcess">
+            <vm:content><![CDATA[#[vars.storeCustomerID]]]></vm:content>
+        </vm:publish-consume>
+    </flow>
+    <flow name="get:\customers\(customerId):order-track-process-config">
+        <set-variable value="#[attributes.uriParams.'customerId']" doc:name="storeCustomerID" doc:id="b2259831-4be2-4597-ac81-b9bb94decc2b" variableName="storeCustomerID" />
+        <vm:publish-consume queueName="customerGetProcess" doc:name="Publish consume" doc:id="6329cf80-0828-4992-938e-47e44b72dc18" config-ref="VM_ConfigProcess">
+            <vm:content><![CDATA[#[vars.storeCustomerID]]]></vm:content>
+        </vm:publish-consume>
+    </flow>
+    <flow name="get:\customers\(customerId)\summary:order-track-process-config">
+        <set-variable value="#[attributes.uriParams.'customerId']" doc:name="storeCustomerID" doc:id="612ee52d-d08b-4bb0-89ee-1662c1411b02" variableName="storeCustomerID" />
+        <vm:publish-consume queueName="customerSummary" doc:name="Publish consume" doc:id="2715275b-136a-4fce-9816-38b21c4d7f10" config-ref="VM_ConfigProcess">
+            <vm:content><![CDATA[#[vars.storeCustomerID]]]></vm:content>
+        </vm:publish-consume>
+    </flow>
+    <flow name="post:\customers\(customerId)\createOrder:order-track-process-config">
+        <ee:transform doc:name="Transform Message" doc:id="940ae75d-36d7-4afd-b604-8758032e697c">
+            <ee:variables>
+                <ee:set-variable variableName="customerId"><![CDATA[attributes.uriParams.'customerId']]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <logger level="INFO" doc:name="Logger" doc:id="09850d78-af5c-47a7-be64-fa54be482dd5" message="put:\customers\(customerId)\address:application\json:order-track-process-config" />
+    </flow>
+    <flow name="put:\customers\(customerId):application\json:order-track-process-config">
+        <set-variable value="#[attributes.uriParams.'customerId']" doc:name="storeCustomerID" doc:id="c62f7b4c-02f1-4feb-8c27-f3e6d8c54c9e" variableName="storeCustomerID" />
+        <set-variable value="#[payload]" doc:name="storeCustomerInfo" doc:id="9e644c31-6e58-4115-abf9-6abe9d8d22d5" variableName="storeCustomerInfo" />
+        <vm:publish-consume queueName="putCustomertoSys" doc:name="Publish consume" doc:id="9894233b-4adc-40e7-abb7-124e90d45dd6" config-ref="VM_ConfigProcess">
+            <vm:content><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	'customerID' : vars.storeCustomerID,
+	'orderInfo': vars.storeCustomerInfo
+}]]]></vm:content>
+        </vm:publish-consume>
+    </flow>
+    <flow name="post:\customers\createOrder:order-track-process-config">
+        <logger level="INFO" message="post:\customers\createOrder:order-track-process-config" />
+    </flow>
+    <flow name="post:\customers:application\json:order-track-process-config">
+        <vm:publish-consume queueName="createCustomerpapi" doc:name="Create Customer" doc:id="82f827fd-1318-4240-8603-eb6abad84813" config-ref="VM_ConfigProcess" target="orderResponse">
+            <vm:content><![CDATA[#[vars.storeOrderInfo]]]></vm:content>
+        </vm:publish-consume>
+    </flow>
+    <flow name="post:\customers\(customerId)\address:application\json:order-track-process-config">
+        <set-variable value="#[attributes.uriParams.'customerId']" doc:name="storeCustomerID" doc:id="95e5f340-8dbe-4156-aeb0-0f7140981e0e" variableName="storeCustomerID" />
+        <logger level="INFO" doc:name="Logger" doc:id="f92f4d0f-2246-4677-9673-93751eee124d" message="#[vars.storeCustomerID]" />
+        <set-variable value="#[payload]" doc:name="storeAddressData" doc:id="b178178b-fc0d-4e10-a0d2-c42962983bf6" variableName="storeAddressData" />
+        <ee:transform doc:name="Transform Message" doc:id="af06ac11-1928-4ed1-bcba-1194536931c8">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	'CustomerID': vars.storeCustomerID as Number,
+	(vars.storeAddressData)
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <vm:publish-consume queueName="postAddressofCustomer" doc:name="Create Order" doc:id="7a18e5be-bf48-4ed9-ac10-ba38299829d3" config-ref="VM_ConfigProcess" target="orderResponse" />
+    </flow>
+    <flow name="post:\customers\(customerId)\orders:application\json:order-track-process-config">
+        <set-variable value="#[attributes.uriParams.'customerId']" doc:name="storeCustomerID" doc:id="549849b9-3719-40d6-bc24-02ea67dda6ab" variableName="storeCustomerID" />
+        <logger level="INFO" doc:name="Logger" doc:id="72e68f39-7d7e-422d-a0f2-84c4135f7cb6" message="#[vars.storeCustomerID]" />
+        <set-variable value="#[payload]" doc:name="storeOrderData" doc:id="80e069c0-c096-46b4-856a-7518ea11e253" variableName="storeOrderData" />
+        <ee:transform doc:name="Transform Message" doc:id="b3316dcf-0f3e-4c1f-a0ce-9aea732dcc17">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	'CustomerID': vars.storeCustomerID as Number,
+	(vars.storeOrderData)
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <vm:publish-consume queueName="postOrderpapi" doc:name="Create Order" doc:id="1b892afb-a19a-41f4-9179-c694136dc134" config-ref="VM_ConfigProcess" />
+    </flow>
+    <flow name="get:\admin\summary:order-track-process-config">
+		<flow-ref doc:name="getSummaryofSystem" doc:id="29b09a58-52ff-4324-9b75-17173a53facf" name="getSummaryofSystem"/>
+    </flow>
+    <flow name="get:\admin\summaryorders:order-track-process-config">
+		<flow-ref doc:name="getAllOrderSet" doc:id="0517042b-f211-4861-8d35-68a0ce131d0f" name="getAllOrderSet"/>
+    </flow>
+    <flow name="get:\admin\summaryusers:order-track-process-config">
+		<flow-ref doc:name="getAllCustomerSet" doc:id="1aaa348e-0b54-4aa6-9c09-68bae267efdb" name="getAllCustomerSet"/>
+    </flow>
+</mule>

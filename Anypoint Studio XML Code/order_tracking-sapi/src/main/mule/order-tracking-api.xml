@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+    <http:listener-config name="order-tracking-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="order-tracking-api-config" api="order-tracking-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="order-tracking-api-main">
+        <http:listener config-ref="order-tracking-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="order-tracking-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="order-tracking-api-console">
+        <http:listener config-ref="order-tracking-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="order-tracking-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\address\(id):application\json:order-tracking-api-config">
+		<set-variable value="#[attributes.uriParams.'id']" doc:name="storeAddressID" doc:id="2859a4c4-9ee2-4a87-ab66-c906ef4cdeb4" variableName="storeAddressID" />
+		<set-variable value="#[payload]" doc:name="storeAddressInfo" doc:id="e78b1309-412d-43dc-8d46-cdc770df37cc" variableName="storeAddressInfo" />
+		<vm:publish-consume queueName="putAddress" doc:name="Publish consume" doc:id="855fc474-214b-46e1-9d74-75454452535e" config-ref="VM_Config" >
+			<vm:content ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	'addressID' : vars.storeAddressID,
+	'addressInfo': vars.storeAddressInfo
+}]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+    <flow name="put:\customer\(id):application\json:order-tracking-api-config">
+		<set-variable value="#[attributes.uriParams.'id']" doc:name="storeCustomerID" doc:id="1a904c05-f792-4a5d-9134-00150a6fe08e" variableName="storeCustomerID" />
+		<set-variable value="#[payload]" doc:name="storeCustomerInfo" doc:id="70108c3a-660d-4c4e-b3f4-dbb111d6a9da" variableName="storeCustomerInfo" />
+		<vm:publish-consume queueName="putCustomer" doc:name="Publish consume" doc:id="82fc4a17-ee88-4243-b013-2f6df5b9032b" config-ref="VM_Config" >
+			<vm:content ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	'customerID' : vars.storeCustomerID,
+	'orderInfo': vars.storeCustomerInfo
+}]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+    <flow name="put:\orders\(id):application\json:order-tracking-api-config">
+		<set-variable value="#[attributes.uriParams.'id']" doc:name="storeOrderID" doc:id="a1312ce3-3a90-4c8c-b4b6-0692f1d44d9b" variableName="storeOrderID" />
+		<set-variable value="#[payload]" doc:name="storeOrderInfo" doc:id="54aef93b-090d-4a70-b4d3-3d6f6f37ff04" variableName="storeOrderInfo" />
+		<vm:publish-consume doc:name="Publish consume" doc:id="7b70495d-93f2-4ad4-8bfd-43f58993de4a" config-ref="VM_Config" queueName="putOrder">
+			<vm:content ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	'orderID' : vars.storeOrderID,
+	'orderInfo': vars.storeOrderInfo
+}]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+    <flow name="delete:\address\(id):order-tracking-api-config">
+		<set-variable value="#[attributes.uriParams.'id']" doc:name="storeCustomerID" doc:id="6908af0a-861b-42b5-90ce-6d96466cd9c4" variableName="storeCustomerID" />
+		<vm:publish-consume queueName="deleteAddressbyId" doc:name="Publish consume" doc:id="a7b7431d-2db6-46fe-83a6-3dfe80c781ce" config-ref="VM_Config" >
+			<vm:content ><![CDATA[#[vars.storeCustomerID]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+    <flow name="delete:\orders\(id):order-tracking-api-config">
+		<set-variable value="#[attributes.uriParams.'id']" doc:name="storeCustomerID" doc:id="b3619d13-c79b-4b37-aeda-5ea88c8e6f60" variableName="storeCustomerID" />
+		<vm:publish-consume queueName="deleteOrderbyID" doc:name="Publish consume" doc:id="099faab2-de16-443e-bb79-aa1bde0e8355" config-ref="VM_Config" >
+			<vm:content ><![CDATA[#[vars.storeCustomerID]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+    <flow name="delete:\customer\(id):order-tracking-api-config">
+		<set-variable value="#[attributes.uriParams.'id']" doc:name="storeCustomerID" doc:id="42276e9f-39d2-4352-8a4d-709aebcccdf6" variableName="storeCustomerID" />
+		<vm:publish-consume queueName="deleteCustomerbyId" doc:name="Publish consume" doc:id="ad7532dd-2399-48b9-8de1-986af1e9fd67" config-ref="VM_Config" >
+			<vm:content ><![CDATA[#[vars.storeCustomerID]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+    <flow name="get:\customer:order-tracking-api-config">
+        <logger level="INFO" message="get:\customer:order-tracking-api-config" />
+		<flow-ref doc:name="Flow Reference" doc:id="d08ec682-fb6e-477f-aeb7-098f4b0f7bbc" name="getAllCustomers"/>
+    </flow>
+    <flow name="get:\orders:order-tracking-api-config">
+        <logger level="INFO" message="get:\orders:order-tracking-api-config" />
+		<flow-ref doc:name="Flow Reference" doc:id="a390bbfe-1a7e-4ab5-bc94-712094b8b738" name="getAllOrders"/>
+    </flow>
+    <flow name="get:\orders\(id):order-tracking-api-config">
+		<set-variable value="#[attributes.uriParams.'id']" doc:name="storeCustomerID" doc:id="cf68b390-e51d-4127-90be-4898ad715036" variableName="storeCustomerID" />
+		<vm:publish-consume queueName="getOrderbyCustID" doc:name="Publish consume" doc:id="dce9ed7b-9fb5-4b63-ab44-43d3bfb90000" config-ref="VM_Config" >
+			<vm:content ><![CDATA[#[vars.storeCustomerID]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+    <flow name="get:\customer\(id):order-tracking-api-config">
+        <set-variable doc:name="storeCustomerID" doc:id="c811fac7-2ce2-4f89-b24a-a3bf98e7fdfd" variableName="storeCustomerID" value="#[attributes.uriParams.'id']"/>
+		<vm:publish-consume doc:name="Publish consume" doc:id="4985a563-7475-42ce-a587-fbf0d0db89f6" config-ref="VM_Config" queueName="getCustomerbyID">
+			<vm:content ><![CDATA[#[vars.storeCustomerID]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+    <flow name="get:\address\(id):order-tracking-api-config">
+		<set-variable value="#[attributes.uriParams.'id']" doc:name="storeCustomerID" doc:id="19ce5e14-7612-4209-9111-b7f04e3221cd" variableName="storeCustomerID" />
+		<vm:publish-consume queueName="getAddressbyCustID" doc:name="Publish consume" doc:id="b5e4d7dd-26c9-4e59-8fa9-89173a745036" config-ref="VM_Config">
+			<vm:content><![CDATA[#[vars.storeCustomerID]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+    <flow name="post:\address:application\json:order-tracking-api-config">
+		<set-variable value="#[payload]" doc:name="storeAddressInfo" doc:id="f0e15b5c-138b-4c7c-a4bb-b8ae63dfc1e8" variableName="storeAddressInfo" />
+		<vm:publish-consume queueName="postAddress" doc:name="Create Address" doc:id="9e752c97-b14d-4c2b-898b-588130b8a015" config-ref="VM_Config" >
+			<vm:content ><![CDATA[#[vars.storeAddressInfo]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+    <flow name="post:\customer:application\json:order-tracking-api-config">
+		<set-variable value="#[payload]" doc:name="storeCustomerInfo" doc:id="9077e52a-3c11-4ebd-8b8a-306fa3fc72bc" variableName="storeCustomerInfo"/>
+		<vm:publish-consume doc:name="Create Customer" doc:id="6722cc72-9161-41d8-b303-2fa8e7ae4544" config-ref="VM_Config" queueName="postCustomerDetails">
+			<vm:content ><![CDATA[#[vars.storeCustomerInfo]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+    <flow name="post:\orders:application\json:order-tracking-api-config">
+		<set-variable value="#[payload]" doc:name="storeOrderInfo" doc:id="3df5e888-3b03-41c4-bf31-fcd0fe34e1f0" variableName="storeOrderInfo" />
+		<vm:publish-consume queueName="postOrderDetails" doc:name="Create Order" doc:id="5e97e297-59c8-49ba-974e-556b7e5ce291" config-ref="VM_Config" target="orderResponse">
+			<vm:content ><![CDATA[#[vars.storeOrderInfo]]]></vm:content>
+		</vm:publish-consume>
+		<set-payload value="#[vars.orderResponse]" doc:name="Send Out Response" doc:id="087f8ae1-7c5a-4cee-83fa-a06799137508" />
+    </flow>
+</mule>

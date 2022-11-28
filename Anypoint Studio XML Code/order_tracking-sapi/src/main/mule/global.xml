@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="6b2c7a48-4d1d-4e02-9e5f-cc4dfc4de55f" >
+		<db:mssql-connection host="localhost" instanceName="MSSQLSERVER" port="1433" user="sa" databaseName="dbShopping" password="1234"/>
+	</db:config>
+	<vm:config name="VM_Config" doc:name="VM Config" doc:id="0efa6b87-62d1-4cac-8839-c4dfa5e5115e" >
+		<vm:queues >
+			<vm:queue queueName="getCustomerbyID" queueType="PERSISTENT" />
+			<vm:queue queueName="postCustomerDetails" queueType="PERSISTENT" />
+			<vm:queue queueName="getOrderbyCustID" queueType="PERSISTENT" />
+			<vm:queue queueName="getAddressbyCustID" queueType="PERSISTENT" />
+			<vm:queue queueName="postOrderDetails" queueType="PERSISTENT" />
+			<vm:queue queueName="deleteOrderbyID" queueType="PERSISTENT" />
+			<vm:queue queueName="deleteCustomerbyId" />
+			<vm:queue queueName="deleteAddressbyId" />
+			<vm:queue queueName="putCustomer" queueType="PERSISTENT" />
+			<vm:queue queueName="putOrder" />
+			<vm:queue queueName="putAddress" />
+			<vm:queue queueName="postOrder" queueType="PERSISTENT" />
+			<vm:queue queueName="postAddress" queueType="PERSISTENT" />
+		</vm:queues>
+	</vm:config>
+</mule>

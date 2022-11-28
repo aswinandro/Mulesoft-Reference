@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+	<flow name="getAllCustomers" doc:id="3741e28e-a0fc-4605-807a-3ed9903dc4ab" >
+		<db:select doc:name="getAllCustomers" doc:id="df18e6b7-7c43-4065-b96e-cb0240da5979" config-ref="Database_Config">
+			<db:sql ><![CDATA[{ call procCustomerSelectAll() }]]></db:sql>
+		</db:select>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;&#10;payload]" doc:name="Set Payload from JAVA to JSON" doc:id="fe6bcd7a-0db8-41e9-afbe-eec7317699d1" />
+	</flow>
+	<flow name="getAllOrders" doc:id="f353b2c2-b713-4b27-8536-e95164997fc6" >
+		<db:select doc:name="getAllCustomers" doc:id="95959827-7b0d-4f12-9208-9459a87848d5" config-ref="Database_Config" >
+			<db:sql ><![CDATA[{ call procOrderSelectAll() }]]></db:sql>
+		</db:select>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;&#10;payload]" doc:name="Set Payload from JAVA to JSON" doc:id="950b3299-fd02-4e96-a98a-ab2d55ee9c13" />
+	</flow>
+	<flow name="getCustomerbyID" doc:id="b92540c4-9355-49ae-8119-eb0a390e19a3" >
+		<vm:listener queueName="getCustomerbyID" doc:name="getCustomerbyID" doc:id="68ff92b7-037e-4c8c-82f4-5b195d91b329" config-ref="VM_Config"/>
+		<db:select doc:name="getCustomerbyID" doc:id="e4552df3-8fbc-4559-8271-71bb37d6bdfd" config-ref="Database_Config" >
+			<db:sql ><![CDATA[{ call procCustomerSelectID(:customerID) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'customerID' : payload 
+}]]]></db:input-parameters>
+		</db:select>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;payload]" doc:name="Set Payload from JAVA to JSON" doc:id="95664823-ebf2-44c3-ba37-c0a8587c1396" />
+	</flow>
+	<flow name="getOrderbyCustID" doc:id="6ca78ba4-b097-40d3-a2ea-b7bcbd4c69cf" >
+		<vm:listener queueName="getOrderbyCustID" doc:name="getOrderbyCustID" doc:id="a1d45471-3807-48e9-a5d9-06f490efc17e" config-ref="VM_Config" />
+		<db:select doc:name="getOrderbyCustID" doc:id="a93e0403-cce1-4460-82f8-68090a5c546f" config-ref="Database_Config" >
+			<db:sql ><![CDATA[{ call procOrderSelectCustID(:customerID) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'customerID' : payload 
+}]]]></db:input-parameters>
+		</db:select>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;payload]" doc:name="Set Payload from JAVA to JSON" doc:id="7540d235-7311-4208-804d-e7266ebbffa7" />
+	</flow>
+	<flow name="getAddressbyCustIDFlow" doc:id="fcbd6501-1b27-45be-9bf7-2827612420eb" >
+		<vm:listener queueName="getAddressbyCustID" doc:name="getAddressbyCustID" doc:id="ba50ed83-6342-414c-be5c-a1bcc5a6cc8b" config-ref="VM_Config" />
+		<db:select doc:name="getAddressbyCustID" doc:id="5559f098-acbf-411e-bc4d-125ead3170ed" config-ref="Database_Config" >
+			<db:sql ><![CDATA[{ call procAddressSelectCustID(:customerID) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'customerID' : payload 
+}]]]></db:input-parameters>
+		</db:select>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;payload]" doc:name="Set Payload from JAVA to JSON" doc:id="77235618-ffb0-4264-b286-4cb3ae385a17" />
+	</flow>
+	<flow name="postCustomerFlow" doc:id="5af0c955-4cba-4752-a9f9-2e85ffd28fed" >
+		<vm:listener queueName="postCustomerDetails" doc:name="postCustomer" doc:id="793b48ce-634b-4798-b31b-a267546baab1" config-ref="VM_Config" />
+		<logger level="INFO" doc:name="Logger" doc:id="86a018c2-1e74-4856-a95c-45b1405c2b74" message="#[payload]" />
+		<db:stored-procedure doc:name="Stored procedure" doc:id="1ff2cc01-979a-4e25-84f6-c88d41fe9f27" config-ref="Database_Config">
+			<db:sql ><![CDATA[{ call procCustomerCreate(:FirstName, :LastName, :Age, :Gender,
+       :TypeofCustomer, :Revenue, :Contact) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'FirstName' : payload.FirstName,
+	'LastName' : payload.LastName,
+	'Age' : payload.Age,
+	'Gender' : payload.Gender,
+	'TypeofCustomer' : payload.TypeofCustomer,
+	'Revenue' : payload.Revenue,
+	'Contact' : payload.Contact
+}]]]></db:input-parameters>
+		</db:stored-procedure>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{'message' : &quot;Customer Created Successfully&quot;}]" doc:name="Set Payload from JAVA to JSON" doc:id="a931bdc5-608e-4d20-996f-b28c7a5acf35" />
+	</flow>
+	<flow name="postOrderFlow" doc:id="dedefdeb-bc03-4018-80c0-0d3f20cc09ba" >
+		<vm:listener queueName="postOrderDetails" doc:name="postCustomer" doc:id="a48fdfc2-5776-4adf-9ee2-217acff14421" config-ref="VM_Config" />
+		<db:stored-procedure doc:name="Stored procedure" doc:id="9d5518f6-d338-4433-84c9-a4157ea87036" config-ref="Database_Config" >
+			<db:sql ><![CDATA[{ call procOrderCreate(:CustomerID, :InvoiceID, :InvoiceName, :ItemID,
+       :ItemName, :Quantity, :BasePrice, :PromoCode) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'CustomerID': payload.CustomerID,
+	'InvoiceID' : payload.InvoiceID,
+	'InvoiceName': payload.InvoiceName,
+	'ItemID': payload.ItemID,
+	'ItemName': payload.ItemName,
+	'Quantity': payload.Quantity,
+	'BasePrice': payload.BasePrice,
+	'PromoCode': payload.PromoCode
+}]]]></db:input-parameters>
+		</db:stored-procedure>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{'message' : &quot;Order Created Successfully&quot;}]" doc:name="Set Payload from JAVA to JSON" doc:id="272e33c0-a266-4662-8798-2368bf81f81f" />
+	</flow>
+	<flow name="postAddressFlow" doc:id="ddcd867a-75e7-482d-a17e-d533e7fd8f6b">
+		<vm:listener queueName="postAddress" doc:name="postAddress" doc:id="24d8dbbd-8090-4aeb-a4d1-6ad00c77e562" config-ref="VM_Config" />
+		<logger level="INFO" doc:name="Logger" doc:id="df48115f-bbef-43c4-b310-f608b86ef7d2" message="#[payload]" />
+		<db:stored-procedure doc:name="Stored procedure" doc:id="bffe198d-7f7d-4154-a2df-69d26ab240a7" config-ref="Database_Config">
+			<db:sql><![CDATA[{ call procAddressCreate(:CustomerID, :BA1, :BA2, :SA, :City, :State, :Country, :PC, :Mob) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{ 
+	'CustomerID' : payload.CustomerID,
+	'BA1' : payload.BillingAddress1,
+	'BA2' : payload.BillingAddress2,
+	'SA' : payload.ShippingAddress,
+	'City' : payload.City,
+	'State' : payload.State,
+	'Country' : payload.Country,
+	'PC' : payload.PostalCode,
+	'Mob' :payload.MobileNo
+}]]]></db:input-parameters>
+		</db:stored-procedure>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{'message' : &quot;Address Created Successfully&quot;}]" doc:name="Set Payload from JAVA to JSON" doc:id="5499d113-22b6-4658-9a39-57cedce6da8c" />
+	</flow>
+	<flow name="deleteCustomerFlow" doc:id="ff541282-a12c-44d4-b447-8593c4b64696" >
+		<vm:listener queueName="deleteCustomerbyId" doc:name="deleteCustomer" doc:id="d1a06dce-f2b1-4586-9aaa-68a5d9f59c56" config-ref="VM_Config" />
+		<logger level="INFO" doc:name="Logger" doc:id="bd22becb-674a-4896-875c-89f41d43c54e" message="#[payload]" />
+		<db:stored-procedure doc:name="Stored procedure" doc:id="a1d87934-7b7f-4a2d-a955-07705df6316e" config-ref="Database_Config" >
+			<db:sql ><![CDATA[{ call procCustomerDelete(:CustomerID) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'CustomerID' : payload
+}]]]></db:input-parameters>
+		</db:stored-procedure>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{'message' : &quot;Customer Deleted Successfully&quot;}]" doc:name="Set Payload from JAVA to JSON" doc:id="424c6bdd-06db-478e-aa35-8ddf9ef68f13" />
+	</flow>
+	<flow name="deleteOrderFlow" doc:id="2df65aaf-4e68-470c-ac1d-ca9d91e34e96" >
+		<vm:listener queueName="deleteOrderbyID" doc:name="deleteOrder" doc:id="94020fbc-e655-4c51-a826-b48629e088c0" config-ref="VM_Config" />
+		<logger level="INFO" doc:name="Logger" doc:id="203e810f-1093-47c5-947d-36aa1fbc8369" message="#[payload]" />
+		<db:stored-procedure doc:name="Stored procedure" doc:id="2c92d7e2-9159-41b7-8f07-4bb4f7c8f995" config-ref="Database_Config" >
+			<db:sql ><![CDATA[{ call procOrderDelete(:CustomerID) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'CustomerID' : payload
+}]]]></db:input-parameters>
+		</db:stored-procedure>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{'message' : &quot;Order Deleted&quot;}]" doc:name="Set Payload from JAVA to JSON" doc:id="406bf699-5a45-40b7-9b92-c3ca3fe44a26" />
+	</flow>
+	<flow name="deleteAddressFlow" doc:id="af7f45e2-64c1-42d8-84d2-904eae7787d2" >
+		<vm:listener queueName="deleteAddressbyId" doc:name="deleteAddress" doc:id="5b916d48-3364-4e42-b972-5475f7bb6a8e" config-ref="VM_Config" />
+		<logger level="INFO" doc:name="Logger" doc:id="089491b3-6303-4149-9368-7ffa726bbd9a" message="#[payload]" />
+		<db:stored-procedure doc:name="Stored procedure" doc:id="a8e87b14-b477-457e-a319-de6b0c33ef6f" config-ref="Database_Config" >
+			<db:sql ><![CDATA[{ call procAddressDelete(:CustomerID) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'CustomerID' : payload
+}]]]></db:input-parameters>
+		</db:stored-procedure>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{'message' : &quot;Address Deleted Successfully&quot;}]" doc:name="Set Payload from JAVA to JSON" doc:id="b45abc07-149a-43b1-993a-4b05e6b28bc6" />
+	</flow>
+	<flow name="putOrderFlow" doc:id="12b4128a-a0d2-47d9-90b1-fd6f619567e2" >
+		<vm:listener doc:name="putOrder" doc:id="c8b37e6b-4025-4b91-a1fa-22bf8e1a43cc" config-ref="VM_Config" queueName="putOrder"/>
+		<db:stored-procedure doc:name="Stored procedure" doc:id="cdbc307d-8f18-4a92-932d-4f2c5174c40f" config-ref="Database_Config">
+			<db:sql ><![CDATA[{ call procOrderUpdate(:OrderID, :CustomerID, :InvoiceID, :InvoiceName, :ItemID,
+       :ItemName, :Quantity, :BasePrice, :PromoCode) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{   'OrderID' : payload.orderID,
+	'CustomerID': payload.orderInfo.CustomerID,
+	'InvoiceID' : payload.orderInfo.InvoiceID,
+	'InvoiceName': payload.orderInfo.InvoiceName,
+	'ItemID': payload.orderInfo.ItemID,
+	'ItemName': payload.orderInfo.ItemName,
+	'Quantity': payload.orderInfo.Quantity,
+	'BasePrice': payload.orderInfo.BasePrice,
+	'PromoCode': payload.orderInfo.PromoCode
+}]]]></db:input-parameters>
+		</db:stored-procedure>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{'message' : &quot;Order Updated Successfully&quot;}]" doc:name="Set Payload from JAVA to JSON" doc:id="68bd5a94-3a97-42a2-82f3-20b260de0dbd" />
+	</flow>
+	<flow name="putCustomerFlow" doc:id="15bce765-8a41-46b7-9bb3-f6360c505a4d" >
+		<vm:listener queueName="putCustomer" doc:name="putCustomer" doc:id="df94e42b-1b68-485a-9626-e9bd9e1301bb" config-ref="VM_Config" />
+		<db:stored-procedure doc:name="Stored procedure" doc:id="46b005aa-5ac0-4acc-8418-b8cb5f88cab2" config-ref="Database_Config" >
+			<db:sql ><![CDATA[{ call procCustomerUpdate(:CustomerID, :FirstName, :LastName, :Age, :Gender,
+       :TypeofCustomer, :Revenue, :Contact) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'CustomerID' : payload.customerID,
+	'FirstName' : payload.orderInfo.FirstName,
+	'LastName' : payload.orderInfo.LastName,
+	'Age' : payload.orderInfo.Age,
+	'Gender' : payload.orderInfo.Gender,
+	'TypeofCustomer' : payload.orderInfo.TypeofCustomer,
+	'Revenue' : payload.orderInfo.Revenue,
+	'Contact' : payload.orderInfo.Contact
+}]]]></db:input-parameters>
+		</db:stored-procedure>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{'message' : &quot;Customer Updated Successfully&quot;}]" doc:name="Set Payload from JAVA to JSON" doc:id="fb42f9f8-f2e3-43c6-a930-9daa4d645765" />
+	</flow>
+	<flow name="putAddressFlow" doc:id="093f8cf0-8531-4249-8cd0-6f819dc28d38" >
+		<vm:listener queueName="putAddress" doc:name="putAddress" doc:id="8eb34359-74b1-4f3b-a2fd-392e52a39c7a" config-ref="VM_Config" />
+		<logger level="INFO" doc:name="Logger" doc:id="5c557d39-047d-4338-a1cf-e5b796f8b641" message="#[payload]"/>
+		<db:stored-procedure doc:name="Stored procedure" doc:id="3e6a9efb-6ff6-4d0e-81c6-47899b5de396" config-ref="Database_Config" >
+			<db:sql ><![CDATA[{ call procAddressUpdate(:AddressID,:CustomerID, :BA1, :BA2, :SA, :City, :State, :Country, :PC, :Mob) }]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{   'AddressID' : payload.addressID,
+	'CustomerID' : payload.addressInfo.CustomerID,
+	'BA1' : payload.addressInfo.BillingAddress1,
+	'BA2' : payload.addressInfo.BillingAddress2,
+	'SA' : payload.addressInfo.ShippingAddress,
+	'City' : payload.addressInfo.City,
+	'State' : payload.addressInfo.State,
+	'Country' : payload.addressInfo.Country,
+	'PC' : payload.addressInfo.PostalCode,
+	'Mob' :payload.addressInfo.MobileNo
+}]]]></db:input-parameters>
+		</db:stored-procedure>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{'message' : &quot;Customer Updated Successfully&quot;}]" doc:name="Set Payload from JAVA to JSON" doc:id="dd3119ab-f08a-4f83-8f2d-60c947f55b61" />
+	</flow>
+</mule>

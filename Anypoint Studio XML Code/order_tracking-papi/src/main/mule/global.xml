@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="57a17cda-57c6-419a-bcd5-70f68e1667ad" basePath="/api">
+		<http:request-connection host="localhost" port="8081" >
+			<http:authentication >
+				<http:basic-authentication username="Sim" password="Sim" />
+			</http:authentication>
+		</http:request-connection>
+		<http:default-headers >
+			<http:default-header key="client_id" value="2343asdxzsdfsfwersdf" />
+			<http:default-header key="client_secret" value="asdadasdasdasdasfcx2313" />
+		</http:default-headers>
+	</http:request-config>
+	<vm:config name="VM_ConfigProcess" doc:name="VM Config" doc:id="63f5bf39-6b04-46eb-aaa8-f2110f28bc3d" >
+		<vm:queues >
+			<vm:queue queueName="customerGetProcess" queueType="PERSISTENT" />
+			<vm:queue queueName="getOrdersofCustomer" queueType="PERSISTENT" />
+			<vm:queue queueName="deleteCustomerPapi" queueType="PERSISTENT" />
+			<vm:queue queueName="createCustomerpapi" />
+			<vm:queue queueName="customerSummary" queueType="PERSISTENT" />
+			<vm:queue queueName="createOrder" queueType="PERSISTENT" />
+			<vm:queue queueName="postOrderpapi" queueType="PERSISTENT" />
+			<vm:queue queueName="putOrderpapi" queueType="PERSISTENT" />
+			<vm:queue queueName="getAddressofCustomer" queueType="PERSISTENT" />
+			<vm:queue queueName="postAddressofCustomer" queueType="PERSISTENT" />
+			<vm:queue queueName="deleteAddressofCustomer" queueType="PERSISTENT" />
+			<vm:queue queueName="putCustomertoSys" queueType="PERSISTENT" />
+			<vm:queue queueName="putAddresstosys" queueType="PERSISTENT" />
+		</vm:queues>
+	</vm:config>
+	<http:request-config name="HTTP_RequestPAPI" doc:name="HTTP Request configuration" doc:id="40f88e91-8f3a-48ce-8764-ac0d64611a32" basePath="/api" >
+		<http:request-connection host="localhost" port="8082" />
+	</http:request-config>
+</mule>

@@ -1,0 +1,5 @@
+%dw 2.0
+
+type auto_c84d6be0_6834_4eed_a782_4329af9d99a9_Output_Variables_customerID = Any {"typeAlias": "Serializable",
+"typeId": "java.io.Serializable"}
+
